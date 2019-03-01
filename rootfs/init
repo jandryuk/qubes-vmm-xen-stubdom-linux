@@ -102,6 +102,7 @@ IFS=$'\x1b'
 set -f
 qemu -sandbox on,obsolete=deny,elevateprivileges=deny,spawn=deny,resourcecontrol=deny \
 -chardev pipe,path=/tmp/qmp/qemu,id=m -mon chardev=m,mode=control \
+-xen-stubdom \
     $dm_args $kernel &
 set +f
 unset IFS
