@@ -4,7 +4,7 @@
          return;
      }
  
-+    if (!xen_stubdom_enable()) {
++    if (!xen_stubdom_enabled()) {
 +        s->machine_addr = s->hostaddr;
 +    }
 +
