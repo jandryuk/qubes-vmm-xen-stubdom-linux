@@ -9,16 +9,32 @@ rootfs_dir="$(pwd)/build/rootfs/dir"
 
 rm -fr "$rootfs_dir"
 
-# Using dracut to gather the shared libraries
-# from https://dracut.wiki.kernel.org/index.php/Main_Page
-if ! test -x "$DRACUT_INSTALL"; then
-    echo DRACUT_INSTALL unset or incorrect >&2
+INITRAMFS_HOOKS=/usr/share/initramfs-tools/hook-functions
+DRACUT_INSTALL=/usr/lib/dracut/dracut-install
+if [ -x "$DRACUT_INSTALL" ]; then
+    do_inst=inst_dracut
+    mode=dracut
+elif [ -f "$INITRAMFS_HOOKS" ]; then
+    . "$INITRAMFS_HOOKS"
+    do_inst=inst_initramfs
+    mode=tools
+else
+    echo "Could not file dracut ($DRACUT_INSTALL) nor initramfs-tools ($INITRAMFS_HOOKS).  Please install one of the packages.  Exiting..."
     exit 1
 fi
 
-inst() {
+inst_dracut() {
     [[ -e "${rootfs_dir}/${2:-$1}" ]] && return 0  # already there
     "$DRACUT_INSTALL" -D "$rootfs_dir" -l "$@"
+}
+
+inst_initramfs() {
+    . /usr/share/initramfs-tools/hook-functions
+    DESTDIR="$rootfs_dir" verbose=n copy_exec "$1" "$2"
+}
+
+inst() {
+    $do_inst "$@"
 }
 
 mkdir -p "$rootfs_dir"/{bin,etc,proc/xen,sys,dev,tmp}
@@ -60,7 +76,7 @@ inst build/qemu/pc-bios/optionrom/linuxboot.bin /share/qemu/linuxboot.bin
 inst build/qemu/pc-bios/vgabios-cirrus.bin /share/qemu/vgabios-cirrus.bin
 inst build/qemu/pc-bios/vgabios-stdvga.bin /share/qemu/vgabios-stdvga.bin
 
-inst xenstore-read /bin/xenstore-read
+inst $( which xenstore-read ) /bin/xenstore-read
 
 inst helpers/vchan-socket-proxy /bin/vchan-socket-proxy
 inst helpers/add-fd /bin/add-fd
@@ -80,6 +96,13 @@ done
 inst "rootfs/qemu-ifup" "/etc/qemu-ifup"
 inst "rootfs/qemu-ifdown" "/etc/qemu-ifdown"
 inst "rootfs/init" "/init"
+
+if [ "$mode" = "tools" ]; then
+    # initramfs copy_exec will convert a destination of /bin to /usr/bin.
+    # Fix that so /bin/sh and /bin symlinks are found.
+    (find $rootfs_dir/{,usr/,usr/local/}bin -type f -print0 || true) | xargs -0 mv -t $rootfs_dir/bin/
+    rm -rf $rootfs_dir/usr/{,local/}bin
+fi
 
 mkdir $rootfs_dir/lib.new
 (find $rootfs_dir/{,usr/,usr/local/}lib{,64} -type f -print0 || true) | xargs -0 mv -t $rootfs_dir/lib.new/
