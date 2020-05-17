@@ -77,12 +77,15 @@ done < /proc/kmsg
 
 # setup FD 3 and 4 for migration stream (incoming, outgoing), actual qemu
 # options are controlled by the toolstack
-if exec 3</dev/hvc2; then
-    stty raw -echo -echoctl <&3
+if exec 118</dev/hvc2; then
+    stty raw -echo -echoctl <&118
 fi
-if exec 4>/dev/hvc1; then
-    stty raw -echo -echoctl <&4
+if exec 119>/dev/hvc1; then
+    stty raw -echo -echoctl <&119
 fi
+
+dm_args="$( echo "$dm_args" | sed 's/$STUBDOM_RESTORE_INCOMING_ARG/fd:118/' )"
+
 # $dm_args is separated with \n to allow for spaces in arguments.
 IFS=$'\n'
 set -f
@@ -99,10 +102,10 @@ qmp_hello=$'{"execute":"qmp_capabilities","id":1}\r\n'
 qmp_addfd=$'{"execute":"add-fd", "arguments": { "fdset-id": 1 }, "id":42 }\r\n'
 
 while [ ! -e /tmp/qemu.qmp ]; do sleep 0.1; done
-add-fd /tmp/qemu.qmp /dev/fd/4 "$qmp_hello$qmp_addfd" "42"
+add-fd /tmp/qemu.qmp /dev/fd/119 "$qmp_hello$qmp_addfd" "42"
 
-exec 3<&-
-exec 4>&-
+exec 118<&-
+exec 119>&-
 
 
 # FIXME: this assume dom0 as toolstack domain
