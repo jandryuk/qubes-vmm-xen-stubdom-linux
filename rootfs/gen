@@ -100,8 +100,11 @@ inst "rootfs/init" "/init"
 if [ "$mode" = "tools" ]; then
     # initramfs copy_exec will convert a destination of /bin to /usr/bin.
     # Fix that so /bin/sh and /bin symlinks are found.
-    (find $rootfs_dir/{,usr/,usr/local/}bin -type f -print0 || true) | xargs -0 mv -t $rootfs_dir/bin/
+    (find $rootfs_dir/{usr/,usr/local/}bin -type f -print0 || true) | xargs -0 mv -t $rootfs_dir/bin/
     rm -rf $rootfs_dir/usr/{,local/}bin
+    # We end up with a second copy of libgcc - Delete it to avoid an error in
+    # the xargs mv below.
+    rm -f $rootfs_dir/usr/lib/libgcc_s.so.1
 fi
 
 mkdir $rootfs_dir/lib.new
