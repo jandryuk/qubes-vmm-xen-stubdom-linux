@@ -89,8 +89,7 @@ dm_args="$( echo "$dm_args" | sed 's/$STUBDOM_RESTORE_INCOMING_ARG/fd:118/' )"
 # run swtpm
 mkdir /tmp/mytpm1
 # create 1M image
-head -c 100000 /dev/zero > /tmp/test.img
-swtpm socket --tpmstate dir=/tmp/mytpm1 --ctrl type=unixio,path=/tmp/mytpm1/swtpm-sock --log level=5 &
+swtpm socket --tpmstate dir=/tmp/mytpm1 --ctrl type=unixio,path=/tmp/mytpm1/swtpm-sock --log level=20 &
 
 sleep 3
 # $dm_args is separated with \n to allow for spaces in arguments.
