@@ -77,6 +77,7 @@ inst build/qemu/pc-bios/vgabios-cirrus.bin /share/qemu/vgabios-cirrus.bin
 inst build/qemu/pc-bios/vgabios-stdvga.bin /share/qemu/vgabios-stdvga.bin
 
 inst $( which xenstore-read ) /bin/xenstore-read
+inst $( which swtpm ) /bin/swtpm
 
 inst helpers/vchan-socket-proxy /bin/vchan-socket-proxy
 inst helpers/add-fd /bin/add-fd
